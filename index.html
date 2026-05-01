@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kota Doria Wholesale Only | Product Catalog</title>
+    <meta name="description" content="Kota Doria Wholesale Only — Premium textile catalog. Embroidery, Block Print, Brush Paint, Screen Print. Minimum order 30 pieces. Call 9664498112 or 8094689242.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* ══════ HEART BUTTON ══════ */
+        .heart-btn {
+            position: absolute;
+            top: 10px; right: 10px;
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.92);
+            border: none;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+            transition: transform 0.2s, background 0.2s;
+            z-index: 10;
+            line-height: 1;
+        }
+        .heart-btn:hover { transform: scale(1.15); background: #fff; }
+        .heart-btn.faved { background: #fff0f3; }
+        .heart-btn .hic { transition: transform 0.3s cubic-bezier(.36,.07,.19,.97); display:block; }
+        .heart-btn.faved .hic { animation: heartPop 0.35s ease; }
+        @keyframes heartPop {
+            0%   { transform: scale(1); }
+            40%  { transform: scale(1.45); }
+            70%  { transform: scale(0.88); }
+            100% { transform: scale(1); }
+        }
+
+        /* ══════ FAV COUNTER PILL ══════ */
+        .fav-nav-btn {
+            position: relative;
+            background: none; border: none; cursor: pointer;
+            display: flex; align-items: center; gap: 0.35rem;
+            font-family: inherit; font-size: 0.9rem; font-weight: 600;
+            color: var(--text-secondary); padding: 0.3rem 0.6rem;
+            border-radius: 20px; transition: color 0.2s, background 0.2s;
+        }
+        .fav-nav-btn:hover { color: #e11d48; background: rgba(225,29,72,0.07); }
+        .fav-counter {
+            background: #e11d48; color: #fff;
+            font-size: 0.65rem; font-weight: 800;
+            min-width: 18px; height: 18px;
+            border-radius: 10px; padding: 0 4px;
+            display: none; align-items: center; justify-content: center;
+        }
+        .fav-counter.visible { display: flex; }
+
+        /* ══════ FAV DRAWER ══════ */
+        .fav-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.45); z-index: 900;
+            animation: fadeIn 0.2s ease;
+        }
+        .fav-overlay.open { display: block; }
+        .fav-drawer {
+            position: fixed; top: 0; right: -420px; bottom: 0;
+            width: min(420px, 100vw);
+            background: #fff; z-index: 901;
+            display: flex; flex-direction: column;
+            box-shadow: -8px 0 40px rgba(0,0,0,0.15);
+            transition: right 0.35s cubic-bezier(0.22,1,0.36,1);
+        }
+        .fav-drawer.open { right: 0; }
+        .drawer-head {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between;
+            background: #fff; flex-shrink: 0;
+        }
+        .drawer-head h2 { font-size: 1.1rem; font-weight: 800; display:flex; align-items:center; gap:.5rem; }
+        .drawer-close {
+            background: none; border: none; font-size: 1.3rem; cursor: pointer;
+            color: var(--text-secondary); width: 32px; height: 32px;
+            border-radius: 50%; display: grid; place-items: center;
+            transition: background 0.2s;
+        }
+        .drawer-close:hover { background: #f3f3f3; }
+        .drawer-body { flex: 1; overflow-y: auto; padding: 1rem 1.25rem; }
+        .drawer-empty { text-align: center; padding: 4rem 1rem; color: var(--text-muted); }
+        .drawer-empty .de-ico { font-size: 2.5rem; margin-bottom: 0.75rem; opacity: 0.4; }
+
+        /* Fav item row */
+        .fav-item {
+            display: flex; gap: 0.85rem; align-items: flex-start;
+            padding: 0.85rem 0; border-bottom: 1px solid var(--border);
+        }
+        .fav-item:last-child { border-bottom: none; }
+        .fav-thumb {
+            width: 64px; height: 64px; border-radius: 8px;
+            object-fit: cover; border: 1px solid var(--border); flex-shrink: 0;
+        }
+        .fav-info { flex: 1; min-width: 0; }
+        .fav-name { font-size: 0.88rem; font-weight: 700; line-height: 1.3; margin-bottom: 0.2rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .fav-cat  { font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 0.15rem; }
+        .fav-price { font-size: 0.9rem; font-weight: 800; color: var(--text-primary); }
+        .fav-remove {
+            background: none; border: none; font-size: 1rem; cursor: pointer;
+            color: var(--text-muted); padding: 0.25rem;
+            transition: color 0.2s; flex-shrink: 0;
+        }
+        .fav-remove:hover { color: #e11d48; }
+
+        /* Progress bar inside drawer */
+        .fav-progress-wrap {
+            padding: 1rem 1.25rem;
+            border-top: 1px solid var(--border);
+            background: #fafafa; flex-shrink: 0;
+        }
+        .fav-prog-label {
+            display: flex; justify-content: space-between;
+            font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 600;
+        }
+        .fav-prog-bg { height: 6px; background: #eee; border-radius: 6px; overflow: hidden; }
+        .fav-prog-fill { height: 100%; border-radius: 6px; background: linear-gradient(90deg,#e11d48,#f43f5e); transition: width 0.4s; }
+
+        .drawer-foot {
+            padding: 1rem 1.25rem;
+            border-top: 1px solid var(--border);
+            background: #fff; flex-shrink: 0;
+            display: flex; flex-direction: column; gap: 0.65rem;
+        }
+        .btn-order {
+            width: 100%; padding: 0.9rem;
+            background: #1a1a1a; color: #fff;
+            border: none; border-radius: 10px;
+            font-family: inherit; font-size: 0.95rem; font-weight: 700;
+            cursor: pointer; transition: background 0.2s, transform 0.15s;
+            display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+        }
+        .btn-order:hover:not(:disabled) { background: #333; transform: translateY(-1px); }
+        .btn-order:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+        .btn-clear {
+            width: 100%; padding: 0.6rem;
+            background: none; border: 1px solid var(--border);
+            border-radius: 10px; font-family: inherit; font-size: 0.85rem;
+            font-weight: 600; color: var(--text-secondary); cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-clear:hover { border-color: #e11d48; color: #e11d48; background: rgba(225,29,72,0.04); }
+
+        /* ══════ ORDER MODAL ══════ */
+        .order-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.55); z-index: 1100;
+            align-items: center; justify-content: center;
+            backdrop-filter: blur(6px); padding: 1rem;
+        }
+        .order-overlay.open { display: flex; animation: fadeIn 0.2s ease; }
+        .order-modal {
+            background: #fff; border-radius: 20px;
+            width: 100%; max-width: 480px;
+            padding: 2rem; box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            animation: slideUp 0.3s ease;
+        }
+        @keyframes slideUp { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
+        .order-modal h2 { font-size: 1.4rem; font-weight: 800; margin-bottom: 0.5rem; }
+        .order-modal p.sub { color: var(--text-secondary); font-size: 0.88rem; margin-bottom: 1.5rem; }
+        .om-summary {
+            background: #f8f7f5; border-radius: 12px; padding: 1rem;
+            margin-bottom: 1.5rem; max-height: 160px; overflow-y: auto;
+        }
+        .om-summary-item { font-size: 0.82rem; color: var(--text-secondary); padding: 0.2rem 0; display:flex; gap:.4rem; align-items:center; }
+        .om-summary-item::before { content:'•'; color:#d4a96a; font-weight:800; }
+        .om-field { margin-bottom: 1rem; }
+        .om-field label { display: block; font-size:0.8rem; font-weight:600; color:var(--text-secondary); margin-bottom: 0.4rem; }
+        .om-field input {
+            width: 100%; padding: 0.8rem 1rem;
+            border: 2px solid var(--border); border-radius: 10px;
+            font-family: inherit; font-size: 0.95rem;
+            transition: border-color 0.2s;
+        }
+        .om-field input:focus { outline: none; border-color: #1a1a1a; }
+        .om-actions { display: flex; gap: 0.75rem; margin-top: 1.5rem; }
+        .om-submit {
+            flex: 1; padding: 0.9rem;
+            background: #1a1a1a; color: #fff;
+            border: none; border-radius: 10px;
+            font-family: inherit; font-size: 0.95rem; font-weight: 700;
+            cursor: pointer; transition: background 0.2s;
+        }
+        .om-submit:hover { background: #333; }
+        .om-cancel {
+            padding: 0.9rem 1.25rem;
+            background: none; border: 2px solid var(--border);
+            border-radius: 10px; font-family: inherit;
+            font-size: 0.95rem; font-weight: 600;
+            color: var(--text-secondary); cursor: pointer; transition: all 0.2s;
+        }
+        .om-cancel:hover { border-color: #999; }
+
+        /* ══════ SUCCESS TOAST ══════ */
+        .success-toast {
+            display: none; position: fixed; bottom: 2rem; left: 50%;
+            transform: translateX(-50%);
+            background: #1a1a1a; color: #fff;
+            padding: 0.85rem 1.5rem; border-radius: 12px;
+            font-size: 0.9rem; font-weight: 600;
+            box-shadow: 0 8px 28px rgba(0,0,0,0.25); z-index: 2000;
+            animation: slideUp 0.3s ease;
+            white-space: nowrap;
+        }
+        .success-toast.show { display: block; }
+
+        /* ══════ PHOTO PICKER MODAL ══════ */
+        .pp-overlay {
+            display:none; position:fixed; inset:0; z-index:1500;
+            background:rgba(0,0,0,0.55); backdrop-filter:blur(6px);
+            align-items:flex-end; justify-content:center;
+        }
+        .pp-overlay.open { display:flex; animation:fadeIn 0.2s ease; }
+        @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+        .pp-modal {
+            width:100%; max-width:520px;
+            background:#fff; border-radius:24px 24px 0 0;
+            padding:1.5rem 1.5rem 2rem;
+            display:flex; flex-direction:column; max-height:82vh;
+            animation:ppUp 0.3s cubic-bezier(0.22,1,0.36,1);
+        }
+        @keyframes ppUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+
+        .pp-head { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:0.75rem; }
+        .pp-head-text h3 { font-size:1.05rem; font-weight:800; margin:0 0 0.15rem; }
+        .pp-head-text p  { font-size:0.8rem; color:var(--text-secondary); margin:0; }
+        .pp-close { background:none; border:none; font-size:1.2rem; cursor:pointer; color:var(--text-muted); width:30px; height:30px; border-radius:50%; display:grid; place-items:center; transition:background 0.2s; }
+        .pp-close:hover { background:#f3f3f3; }
+
+        .pp-name {
+            font-size:0.82rem; font-weight:600;
+            background:#f8f7f5; border-radius:9px;
+            padding:0.5rem 0.85rem; margin-bottom:1rem;
+            color:var(--text-secondary); border-left:3px solid var(--accent);
+        }
+
+        .pp-grid-wrap { overflow-y:auto; flex:1; padding-right:2px; }
+        .pp-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:0.65rem; }
+
+        .pp-thumb {
+            position:relative; border-radius:12px; overflow:hidden;
+            aspect-ratio:1; cursor:pointer;
+            border:2.5px solid transparent;
+            transition:border-color 0.2s, transform 0.15s;
+            background:#f3f3f3;
+        }
+        .pp-thumb:hover { transform:scale(1.03); border-color:rgba(0,0,0,0.15); }
+        .pp-thumb.selected { border-color:#22c55e; }
+        .pp-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+        .pp-check-ico {
+            position:absolute; inset:0;
+            background:rgba(34,197,94,0.3);
+            display:none; align-items:center; justify-content:center;
+            font-size:2rem; color:#fff; font-weight:800;
+            text-shadow:0 2px 4px rgba(0,0,0,0.3);
+        }
+        .pp-thumb.selected .pp-check-ico { display:flex; }
+        .pp-num {
+            position:absolute; bottom:4px; left:5px;
+            font-size:0.6rem; font-weight:700;
+            background:rgba(0,0,0,0.52); color:#fff;
+            border-radius:5px; padding:2px 5px;
+        }
+
+        .pp-foot { display:flex; gap:0.75rem; margin-top:1.1rem; flex-shrink:0; }
+        .pp-cancel {
+            padding:0.8rem 1.2rem; background:none;
+            border:2px solid #e5e5e5; border-radius:12px;
+            font-family:inherit; font-size:0.9rem; font-weight:600;
+            color:#666; cursor:pointer; transition:border-color 0.2s;
+        }
+        .pp-cancel:hover { border-color:#aaa; }
+        .pp-add-btn {
+            flex:1; padding:0.85rem;
+            background:#1a1a1a; color:#fff;
+            border:none; border-radius:12px;
+            font-family:inherit; font-size:0.95rem; font-weight:700;
+            cursor:pointer; transition:background 0.2s, transform 0.15s;
+        }
+        .pp-add-btn:hover:not(:disabled) { background:#333; transform:translateY(-1px); }
+        .pp-add-btn:disabled { opacity:0.35; cursor:not-allowed; transform:none; }
+    </style>
+</head>
+<body>
+
+    <nav class="glass-nav">
+        <div class="nav-container">
+            <h1 class="logo">Kota Doria</h1>
+            <ul class="nav-links">
+                <li><a href="index.html" class="active">Catalog</a></li>
+                <li><a href="#contact">Contact</a></li>
+                <li>
+                    <button class="fav-nav-btn" id="fav-nav-btn" title="My Favourites">
+                        ❤️ Favourites
+                        <span class="fav-counter" id="fav-counter">0</span>
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <div class="hero-content">
+            <h2 class="hero-title">Kota Doria <span>Wholesale Only</span></h2>
+            <p class="hero-subtitle">Premium handcrafted textiles — Embroidery, Block Print, Brush Paint &amp; Screen Print.</p>
+            <div class="moq-badge">
+                <span class="moq-label">Minimum Order Quantity</span>
+                <span class="moq-value">30-50 Pieces</span>
+            </div>
+            <div class="contact-strip">
+                <a href="tel:9664498112" class="contact-btn">📞 9664498112</a>
+                <a href="tel:8094689242" class="contact-btn">📞 8094689242</a>
+                <p class="hero-subtitle" style="width:100%;margin-bottom:0;">❤️ Tap the heart on any design to save it. Select 10 to enquire!</p>
+            </div>
+            <a href="#product-grid" class="scroll-down-arrow" aria-label="Scroll to first design">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v14M19 12l-7 7-7-7"/></svg>
+            </a>
+        </div>
+    </header>
+
+    <main class="catalog-section">
+        <div class="filters">
+            <select id="category-filter" class="category-dropdown">
+                <option value="all">All Designs</option>
+            </select>
+        </div>
+        <div id="product-grid" class="product-grid"></div>
+    </main>
+
+    <footer class="glass-footer" id="contact">
+        <div class="footer-contact">
+            <h3 style="margin-bottom:0.75rem;font-size:1.2rem;">Kota Doria Wholesale Only</h3>
+            <div class="footer-moq">Minimum Order Quantity 30-50 pieces</div>
+            <div style="display:flex;gap:1.5rem;justify-content:center;flex-wrap:wrap;margin-top:0.75rem;">
+                <a href="tel:9664498112" style="color:var(--accent);text-decoration:none;font-size:1rem;">📞 9664498112</a>
+                <a href="tel:8094689242" style="color:var(--accent);text-decoration:none;font-size:1rem;">📞 8094689242</a>
+            </div>
+        </div>
+        <p style="margin-top:1.5rem;color:var(--text-secondary);font-size:0.85rem;">© 2026 Kota Doria Wholesale Only. All rights reserved.</p>
+    </footer>
+
+    <!-- ══════ PHOTO PICKER MODAL ══════ -->
+    <div class="pp-overlay" id="pp-overlay">
+        <div class="pp-modal">
+            <div class="pp-head">
+                <div class="pp-head-text">
+                    <h3>📸 Pick a Photo</h3>
+                    <p>Choose which color / variant you want</p>
+                </div>
+                <button class="pp-close" id="pp-close">✕</button>
+            </div>
+            <div class="pp-name" id="pp-name"></div>
+            <div class="pp-grid-wrap">
+                <div class="pp-grid" id="pp-grid"></div>
+            </div>
+            <div class="pp-foot">
+                <button class="pp-cancel" id="pp-cancel">Cancel</button>
+                <button class="pp-add-btn" id="pp-add-btn" disabled>❤️ Add to Favourites</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════ FAVOURITES DRAWER ══════ -->
+    <div class="fav-overlay" id="fav-overlay"></div>
+    <div class="fav-drawer" id="fav-drawer">
+        <div class="drawer-head">
+            <h2>❤️ My Favourites <span id="drawer-count" style="background:#f3f4f6;color:#6b6b6b;font-size:0.75rem;padding:0.2rem 0.6rem;border-radius:20px;font-weight:700;"></span></h2>
+            <button class="drawer-close" id="drawer-close">✕</button>
+        </div>
+        <div class="drawer-body" id="drawer-body">
+            <div class="drawer-empty">
+                <div class="de-ico">💔</div>
+                <p>No favourites yet.<br>Tap the ❤️ on any design!</p>
+            </div>
+        </div>
+        <div class="fav-progress-wrap" id="fav-progress-wrap">
+            <div class="fav-prog-label">
+                <span id="prog-text">Select <b>10</b> designs to enquire</span>
+                <span id="prog-count">0 / 10</span>
+            </div>
+            <div class="fav-prog-bg">
+                <div class="fav-prog-fill" id="fav-prog-fill" style="width:0%"></div>
+            </div>
+        </div>
+        <div class="drawer-foot">
+            <button class="btn-order" id="btn-place-order" disabled>📋 Send Enquiry (select 10 designs)</button>
+            <button class="btn-clear" id="btn-clear-favs">Clear all</button>
+        </div>
+    </div>
+
+    <!-- ══════ ORDER MODAL ══════ -->
+    <div class="order-overlay" id="order-overlay">
+        <div class="order-modal">
+            <h2>📋 Send Enquiry</h2>
+            <p class="sub">Your selected designs will be sent to us. We'll contact you shortly.</p>
+            <div class="om-summary" id="om-summary"></div>
+            <div class="om-field">
+                <label for="om-name">Your Name *</label>
+                <input id="om-name" type="text" placeholder="e.g. Rahul Sharma">
+            </div>
+            <div class="om-field">
+                <label for="om-phone">WhatsApp / Phone Number *</label>
+                <input id="om-phone" type="tel" placeholder="e.g. 98XXXXXXXX">
+            </div>
+            <div class="om-actions">
+                <button class="om-cancel" id="om-cancel">Cancel</button>
+                <button class="om-submit" id="om-submit">✅ Submit Enquiry</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════ SUCCESS TOAST ══════ -->
+    <div class="success-toast" id="success-toast">✅ Enquiry submitted! We'll contact you on WhatsApp.</div>
+
+    <script src="app.js"></script>
+</body>
+</html>

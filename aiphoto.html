@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kota Doria | AI Photo Studio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body { background: #0d0d12; color: #f0f0ff; font-family: 'Inter', sans-serif; }
+
+        .ai-nav {
+            position: sticky; top: 0; z-index: 100;
+            background: rgba(13,13,18,0.9);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255,255,255,0.07);
+        }
+        .ai-nav .nav-container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; display: flex; justify-content: space-between; align-items: center; height: 64px; }
+        .ai-logo { font-size: 1rem; font-weight: 800; display: flex; align-items: center; gap: 0.5rem; }
+        .ai-logo .grad { background: linear-gradient(135deg,#a78bfa,#60a5fa); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+        .ai-nav-links { display: flex; gap: 1.5rem; list-style: none; align-items: center; }
+        .ai-nav-links a { color: rgba(255,255,255,0.45); text-decoration: none; font-size: 0.875rem; font-weight: 500; transition: color 0.2s; }
+        .ai-nav-links a:hover { color: #fff; }
+
+        .studio-wrapper { max-width: 1200px; margin: 0 auto; padding: 2.5rem 2rem 6rem; }
+
+        /* Hero */
+        .studio-hero { text-align: center; margin-bottom: 3rem; background: linear-gradient(135deg,rgba(167,139,250,.07),rgba(96,165,250,.07)); border:1px solid rgba(167,139,250,.14); border-radius: 22px; padding: 2.5rem 2rem; }
+        .studio-hero h1 { font-size: 2.4rem; font-weight: 800; letter-spacing: -1px; margin-bottom: 0.6rem; }
+        .studio-hero p { color: rgba(255,255,255,.45); font-size: 0.95rem; max-width: 480px; margin: 0 auto 1.25rem; }
+        .step-pills { display: flex; gap: 0.6rem; justify-content: center; flex-wrap: wrap; }
+        .step-pill { display: flex; align-items: center; gap: 0.4rem; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: 30px; padding: 0.35rem 0.9rem; font-size: 0.78rem; color: rgba(255,255,255,.55); }
+        .step-pill b { background: rgba(167,139,250,.3); color: #c4b5fd; border-radius: 50%; width: 18px; height: 18px; display:inline-grid; place-items:center; font-size: 0.68rem; font-weight: 800; }
+
+        /* Glass card */
+        .gc { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.08); border-radius: 18px; padding: 1.75rem; }
+        .sec-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: rgba(255,255,255,.3); margin-bottom: 0.9rem; }
+
+        /* Layout */
+        .two-col { display: grid; grid-template-columns: 400px 1fr; gap: 1.75rem; align-items: start; }
+        .left-panel { display: flex; flex-direction: column; gap: 1.25rem; position: sticky; top: 76px; }
+        .right-panel { display: flex; flex-direction: column; gap: 1.25rem; }
+
+        /* Drop zone */
+        .drop-zone { border: 2px dashed rgba(167,139,250,.35); border-radius: 14px; padding: 2.5rem 1.5rem; text-align: center; cursor: pointer; transition: border-color .2s, background .2s; background: rgba(167,139,250,.03); position: relative; }
+        .drop-zone.drag-over { border-color: #a78bfa; background: rgba(167,139,250,.08); }
+        .drop-zone input[type=file] { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+        .drop-zone h3 { font-size: 1rem; font-weight: 700; margin-bottom: 0.3rem; }
+        .drop-zone p { color: rgba(255,255,255,.35); font-size: 0.82rem; }
+
+        /* Thumb grid */
+        .raw-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(90px,1fr)); gap: 0.6rem; margin-top: 1.1rem; }
+        .raw-thumb { position: relative; border-radius: 10px; overflow: hidden; aspect-ratio: 1; background: #1a1a2e; border: 1px solid rgba(255,255,255,.08); }
+        .raw-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+        .raw-thumb .rx { position:absolute; top:3px; right:3px; background:rgba(239,68,68,.85); color:#fff; border:none; border-radius:50%; width:20px; height:20px; cursor:pointer; font-size:.7rem; font-weight:700; display:grid; place-items:center; transition:transform .15s; }
+        .raw-thumb .rx:hover { transform: scale(1.15); }
+
+        /* Form */
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .fg { display: flex; flex-direction: column; gap: 0.4rem; }
+        .fg.full { grid-column: 1/-1; }
+        .fg label { font-size: 0.76rem; color: rgba(255,255,255,.4); font-weight: 600; }
+        .fg input, .fg select, .fg textarea { background: rgba(0,0,0,.3); border:1px solid rgba(255,255,255,.1); border-radius:9px; padding:.7rem .9rem; color:#fff; font-family:inherit; font-size:.88rem; width:100%; transition:border-color .2s; }
+        .fg input:focus, .fg select:focus, .fg textarea:focus { outline:none; border-color:#a78bfa; }
+        .fg select option { background: #1a1a2e; }
+        .fg textarea { resize:vertical; min-height:80px; }
+
+        /* AI Config */
+        .ai-box { background: rgba(167,139,250,.05); border:1px solid rgba(167,139,250,.18); border-radius:14px; padding:1.25rem; }
+        .ai-box-hdr { font-weight:700; color:#c4b5fd; font-size:.9rem; margin-bottom:.9rem; display:flex; align-items:center; gap:.5rem; }
+
+        /* Bg picker */
+        .bg-picker { display:grid; grid-template-columns:repeat(4,1fr); gap:.5rem; }
+        .bg-opt { aspect-ratio:1; border-radius:8px; cursor:pointer; border:2px solid transparent; transition:border-color .2s, transform .15s; }
+        .bg-opt:hover { transform:scale(1.05); }
+        .bg-opt.active { border-color:#a78bfa; }
+        .bg-opt[data-bg="1"] { background: linear-gradient(135deg,#f5efe6,#ede0ce); }
+        .bg-opt[data-bg="2"] { background: linear-gradient(135deg,#e8f4f8,#d0e8f0); }
+        .bg-opt[data-bg="3"] { background: linear-gradient(135deg,#f0f0f0,#e0e0e0); }
+        .bg-opt[data-bg="4"] { background: linear-gradient(135deg,#1a1a2e,#16213e); }
+
+        /* Buttons */
+        .btn-enhance { width:100%; background:linear-gradient(135deg,#7c3aed,#4f46e5); color:#fff; border:none; padding:1rem 2rem; border-radius:12px; font-family:inherit; font-size:1rem; font-weight:700; cursor:pointer; transition:opacity .2s,transform .15s; display:flex; align-items:center; justify-content:center; gap:.5rem; box-shadow:0 6px 24px rgba(124,58,237,.35); }
+        .btn-enhance:hover:not(:disabled) { opacity:.9; transform:translateY(-2px); }
+        .btn-enhance:disabled { opacity:.4; cursor:not-allowed; transform:none; }
+        .btn-publish { width:100%; background:linear-gradient(135deg,#15803d,#16a34a); color:#fff; border:none; padding:1rem 2rem; border-radius:12px; font-family:inherit; font-size:1rem; font-weight:700; cursor:pointer; transition:opacity .2s,transform .15s; display:flex; align-items:center; justify-content:center; gap:.5rem; box-shadow:0 6px 24px rgba(21,128,61,.3); margin-top:1.25rem; }
+        .btn-publish:hover:not(:disabled) { opacity:.9; transform:translateY(-2px); }
+        .btn-publish:disabled { opacity:.35; cursor:not-allowed; transform:none; }
+
+        /* Progress */
+        .prog-wrap { display:none; margin-top:1.25rem; }
+        .prog-hdr { display:flex; justify-content:space-between; font-size:.78rem; color:rgba(255,255,255,.4); margin-bottom:.35rem; }
+        .prog-bar-bg { height:4px; background:rgba(255,255,255,.06); border-radius:4px; overflow:hidden; }
+        .prog-bar { height:100%; width:0; border-radius:4px; background:linear-gradient(90deg,#7c3aed,#818cf8); transition:width .4s; }
+
+        /* Photo items */
+        .proc-list { display:flex; flex-direction:column; gap:1.1rem; }
+        .pi { background:rgba(255,255,255,.025); border:1px solid rgba(255,255,255,.07); border-radius:14px; padding:1.1rem; }
+        .pi.working { border-color:rgba(167,139,250,.3); }
+        .pi.done { border-color:rgba(34,197,94,.3); }
+        .pi.error { border-color:rgba(239,68,68,.3); }
+        .pi-imgs { display:grid; grid-template-columns:1fr 1fr; gap:.9rem; margin-bottom:.75rem; }
+        .pi-side label { font-size:.68rem; color:rgba(255,255,255,.3); font-weight:700; text-transform:uppercase; letter-spacing:1px; display:block; margin-bottom:.4rem; }
+        .pi-side img { width:100%; border-radius:8px; border:1px solid rgba(255,255,255,.08); object-fit:cover; max-height:200px; display:block; }
+        .pi-placeholder { aspect-ratio:1; background:rgba(255,255,255,.03); border-radius:8px; display:flex; align-items:center; justify-content:center; color:rgba(255,255,255,.2); font-size:.82rem; }
+        .pi-foot { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.5rem; }
+        .sbadge { display:inline-flex; align-items:center; gap:.4rem; padding:.3rem .75rem; border-radius:20px; font-size:.75rem; font-weight:600; }
+        .sbadge.pending { background:rgba(255,255,255,.06); color:rgba(255,255,255,.35); }
+        .sbadge.working { background:rgba(167,139,250,.15); color:#c4b5fd; }
+        .sbadge.done    { background:rgba(34,197,94,.12); color:#86efac; }
+        .sbadge.error   { background:rgba(239,68,68,.12); color:#fca5a5; }
+        .pulse { width:7px; height:7px; border-radius:50%; background:currentColor; animation:pd 1.2s infinite; }
+        @keyframes pd { 0%,100%{opacity:1}50%{opacity:.3} }
+        .acc-btn { font-size:.78rem; font-weight:600; cursor:pointer; padding:.3rem .8rem; border-radius:9px; border:1px solid; transition:all .2s; background:none; }
+        .acc-btn.yes { background:rgba(34,197,94,.1); border-color:rgba(34,197,94,.3); color:#86efac; }
+        .acc-btn.no  { background:rgba(239,68,68,.06); border-color:rgba(239,68,68,.2); color:rgba(255,255,255,.3); }
+
+        /* Empty */
+        .empty { text-align:center; padding:3.5rem 2rem; color:rgba(255,255,255,.2); }
+        .empty .ico { font-size:2.5rem; margin-bottom:.75rem; opacity:.35; }
+
+        /* Result header */
+        .res-hdr { display:flex; justify-content:space-between; align-items:center; margin-bottom:1.1rem; flex-wrap:wrap; gap:.5rem; }
+        .cnt-badge { font-size:.74rem; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); color:rgba(255,255,255,.4); padding:.25rem .65rem; border-radius:20px; }
+
+        /* Toast */
+        #toaster { position:fixed; bottom:1.75rem; right:1.75rem; z-index:9999; display:flex; flex-direction:column; gap:.6rem; }
+        .toast { background:rgba(15,15,25,.97); border:1px solid rgba(255,255,255,.1); color:#fff; padding:.8rem 1.1rem; border-radius:11px; font-size:.84rem; font-weight:500; max-width:310px; box-shadow:0 8px 28px rgba(0,0,0,.5); animation:sl .3s ease; }
+        .toast.ok  { border-color:rgba(34,197,94,.4); }
+        .toast.err { border-color:rgba(239,68,68,.4); }
+        @keyframes sl { from{transform:translateY(16px);opacity:0} to{transform:translateY(0);opacity:1} }
+        @keyframes spin { to{transform:rotate(360deg)} }
+        .spin { animation:spin .8s linear infinite; display:inline-block; }
+
+        @media(max-width:900px){ .two-col{grid-template-columns:1fr} .left-panel{position:static} .pi-imgs{grid-template-columns:1fr} .form-grid{grid-template-columns:1fr} }
+    </style>
+</head>
+<body>
+
+<nav class="ai-nav">
+    <div class="nav-container">
+        <div class="ai-logo">✨ <span class="grad">AI Photo Studio</span> <span style="color:rgba(255,255,255,.2);font-weight:300">|</span> <span style="color:rgba(255,255,255,.3);font-size:.82rem;font-weight:400">Kota Doria</span></div>
+        <ul class="ai-nav-links">
+            <li><a href="adminkota.html">⬅ Admin</a></li>
+            <li><a href="index.html">Catalog</a></li>
+            <li><a href="#" id="logout-btn" style="color:rgba(239,68,68,.7)">Logout</a></li>
+        </ul>
+    </div>
+</nav>
+
+<div class="studio-wrapper">
+    <div class="studio-hero">
+        <h1>📸 AI <span style="background:linear-gradient(135deg,#a78bfa,#60a5fa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Photo Studio</span></h1>
+        <p>Upload raw product photos → AI removes background → composited on a professional catalog background → published to your front page.</p>
+        <div class="step-pills">
+            <div class="step-pill"><b>1</b> Upload raw photos</div>
+            <div class="step-pill"><b>2</b> Fill product details</div>
+            <div class="step-pill"><b>3</b> AI removes background</div>
+            <div class="step-pill"><b>4</b> Accept &amp; publish</div>
+        </div>
+    </div>
+
+    <div class="two-col">
+
+        <!-- LEFT -->
+        <div class="left-panel">
+
+            <!-- Upload -->
+            <div class="gc">
+                <div class="sec-label">Step 1 — Raw Photos</div>
+                <div class="drop-zone" id="drop-zone">
+                    <input type="file" id="file-input" accept="image/*" multiple>
+                    <div style="font-size:2rem;margin-bottom:.5rem">🖼️</div>
+                    <h3>Drop photos here</h3>
+                    <p>or click to browse · JPG, PNG, WEBP</p>
+                </div>
+                <div class="raw-grid" id="raw-grid"></div>
+            </div>
+
+            <!-- Product details -->
+            <div class="gc">
+                <div class="sec-label">Step 2 — Product Details</div>
+                <div class="form-grid">
+                    <div class="fg full"><label>Product Title *</label><input id="p-title" type="text" placeholder="e.g. Kota Doria Embroidery Suit"></div>
+                    <div class="fg"><label>Price ₹ *</label><input id="p-price" type="number" placeholder="850" min="0"></div>
+                    <div class="fg"><label>Category *</label><select id="p-cat"><option>Loading…</option></select></div>
+                    <div class="fg full"><label>Description</label><textarea id="p-desc" placeholder="Fabric, print, style info…"></textarea></div>
+                </div>
+            </div>
+
+            <!-- AI config -->
+            <div class="gc">
+                <div class="sec-label">Step 3 — AI Settings</div>
+                <div class="ai-box">
+                    <div class="ai-box-hdr">🤖 Hugging Face Token</div>
+                    <div class="fg" style="margin-bottom:1rem">
+                        <label>Free token — <a href="https://huggingface.co/settings/tokens" target="_blank" style="color:#a78bfa">get one here</a></label>
+                        <input id="hf-token" type="password" placeholder="hf_xxxxxxxxxxxx">
+                    </div>
+                    <div class="ai-box-hdr" style="margin-top:.5rem">🎨 Background Style</div>
+                    <div class="bg-picker" id="bg-picker">
+                        <div class="bg-opt active" data-bg="1" title="Warm beige studio"></div>
+                        <div class="bg-opt" data-bg="2" title="Cool light blue"></div>
+                        <div class="bg-opt" data-bg="3" title="Clean white/grey"></div>
+                        <div class="bg-opt" data-bg="4" title="Dark luxury"></div>
+                    </div>
+                    <p style="font-size:.72rem;color:rgba(255,255,255,.3);margin-top:.6rem">Background is applied after AI removes product background</p>
+                </div>
+            </div>
+
+            <button class="btn-enhance" id="enhance-btn" disabled>✨ Enhance All Photos with AI</button>
+        </div>
+
+        <!-- RIGHT -->
+        <div class="right-panel">
+            <div class="gc" id="results-card">
+                <div class="res-hdr">
+                    <div>
+                        <div class="sec-label" style="margin-bottom:.2rem">Step 4 — Review &amp; Publish</div>
+                        <h2 style="font-size:1.15rem;font-weight:700">Enhanced Photos</h2>
+                    </div>
+                    <span class="cnt-badge" id="cnt-badge">0 photos</span>
+                </div>
+
+                <div id="proc-list" class="proc-list">
+                    <div class="empty"><div class="ico">🎨</div><p>Upload photos then click <strong>Enhance All</strong></p></div>
+                </div>
+
+                <div class="prog-wrap" id="prog-wrap">
+                    <div class="prog-hdr"><span id="prog-label">Processing…</span><span id="prog-frac">0/0</span></div>
+                    <div class="prog-bar-bg"><div class="prog-bar" id="prog-bar"></div></div>
+                </div>
+
+                <button class="btn-publish" id="publish-btn" disabled>🚀 Publish to Catalog</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="toaster"></div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    // ── Auth ──
+    const adminToken = localStorage.getItem('admin_token');
+    const ghToken    = localStorage.getItem('gh_token');
+    const ghRepo     = localStorage.getItem('gh_repo');
+    const mode       = localStorage.getItem('admin_mode') || 'server';
+    if (!adminToken) { location.href = 'loginkota.html'; return; }
+    document.getElementById('logout-btn').onclick = () => { localStorage.clear(); location.href = 'loginkota.html'; };
+
+    // ── HF token persist ──
+    const hfInput = document.getElementById('hf-token');
+    hfInput.value = localStorage.getItem('hf_api_key') || '';
+    hfInput.addEventListener('blur', () => { if (hfInput.value.trim()) localStorage.setItem('hf_api_key', hfInput.value.trim()); });
+
+    // ── Background selection ──
+    let selectedBg = '1';
+    document.getElementById('bg-picker').addEventListener('click', e => {
+        const opt = e.target.closest('.bg-opt');
+        if (!opt) return;
+        document.querySelectorAll('.bg-opt').forEach(o => o.classList.remove('active'));
+        opt.classList.add('active');
+        selectedBg = opt.dataset.bg;
+    });
+
+    // ── GitHub helpers ──
+    const github = {
+        async req(path, opts = {}) {
+            const url = `https://api.github.com/repos/${ghRepo}/contents/${path}`;
+            const headers = { 'Authorization': `token ${ghToken}`, 'Accept': 'application/vnd.github.v3+json', ...opts.headers };
+            const res = await fetch(url, { ...opts, headers });
+            if (res.status === 401) { alert('GitHub token expired'); localStorage.clear(); location.href = 'loginkota.html'; }
+            return res;
+        },
+        async getFile(path) {
+            const res = await this.req(path + '?t=' + Date.now());
+            if (!res.ok) return { content: null, sha: null };
+            const d = await res.json();
+            try { return { content: JSON.parse(decodeURIComponent(escape(atob(d.content.replace(/\s/g, ''))))), sha: d.sha }; }
+            catch { return { content: null, sha: d.sha }; }
+        },
+        async updateFile(path, content, sha, msg) {
+            return this.req(path, { method: 'PUT', body: JSON.stringify({ message: msg, sha, content: btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 2)))) }) });
+        },
+        async uploadBlob(blob) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = async () => {
+                    const b64  = reader.result.split(',')[1];
+                    const ext  = (blob.type.split('/')[1] || 'png').replace('jpeg','jpg');
+                    const path = `images/ai-${Date.now()}-${Math.random().toString(36).slice(2,7)}.${ext}`;
+                    const res  = await this.req(path, { method: 'PUT', body: JSON.stringify({ message: 'AI enhanced image', content: b64 }) });
+                    if (res.ok) { const d = await res.json(); resolve(d.content.path); }
+                    else reject(new Error('GitHub image upload failed'));
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        }
+    };
+
+    // ── Load categories ──
+    const catEl = document.getElementById('p-cat');
+    (async () => {
+        try {
+            let cats;
+            if (mode === 'github') { const { content } = await github.getFile('categories.json'); cats = content || []; }
+            else { const r = await fetch('api/categories'); cats = await r.json(); }
+            catEl.innerHTML = cats.map(c => `<option value="${c}">${c.charAt(0).toUpperCase()+c.slice(1).replace(/-/g,' ')}</option>`).join('');
+        } catch {
+            catEl.innerHTML = ['embroidery','block-print','brush-paint','screen-print'].map(c => `<option value="${c}">${c}</option>`).join('');
+        }
+    })();
+
+    // ── File handling ──
+    let rawFiles   = [];
+    let photoItems = [];
+
+    const dropZone  = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    const rawGrid   = document.getElementById('raw-grid');
+    const enhBtn    = document.getElementById('enhance-btn');
+
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+    dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('drag-over'); addFiles([...e.dataTransfer.files].filter(f => f.type.startsWith('image/'))); });
+    fileInput.addEventListener('change', () => { addFiles([...fileInput.files]); fileInput.value = ''; });
+
+    function addFiles(files) {
+        files.forEach(f => { if (!rawFiles.find(r => r.name === f.name && r.size === f.size)) rawFiles.push(f); });
+        renderRaw();
+    }
+    function renderRaw() {
+        rawGrid.innerHTML = '';
+        rawFiles.forEach((f, i) => {
+            const url  = URL.createObjectURL(f);
+            const wrap = document.createElement('div');
+            wrap.className = 'raw-thumb';
+            wrap.innerHTML = `<img src="${url}"><button class="rx" title="Remove">✕</button>`;
+            wrap.querySelector('.rx').onclick = () => { rawFiles.splice(i, 1); renderRaw(); };
+            rawGrid.appendChild(wrap);
+        });
+        enhBtn.disabled = rawFiles.length === 0;
+    }
+
+    // ── Toast ──
+    function toast(msg, type = '') {
+        const t = document.createElement('div');
+        t.className = `toast ${type === 'success' ? 'ok' : type === 'error' ? 'err' : ''}`;
+        t.textContent = msg;
+        document.getElementById('toaster').appendChild(t);
+        setTimeout(() => t.remove(), 5000);
+    }
+
+    // ── Render results ──
+    function render() {
+        const list     = document.getElementById('proc-list');
+        const badge    = document.getElementById('cnt-badge');
+        const pubBtn   = document.getElementById('publish-btn');
+        badge.textContent = `${photoItems.length} photo${photoItems.length !== 1 ? 's' : ''}`;
+
+        if (photoItems.length === 0) {
+            list.innerHTML = '<div class="empty"><div class="ico">🎨</div><p>Upload photos then click <strong>Enhance All</strong></p></div>';
+            pubBtn.disabled = true;
+            return;
+        }
+
+        list.innerHTML = '';
+        photoItems.forEach((item, i) => {
+            const div   = document.createElement('div');
+            div.className = `pi ${item.status}`;
+            const aiSrc = item.blob ? URL.createObjectURL(item.blob) : null;
+
+            const badge = {
+                pending: '<span class="sbadge pending">⏳ Waiting</span>',
+                working: '<span class="sbadge working"><span class="pulse"></span> Processing…</span>',
+                done:    '<span class="sbadge done">✅ Done</span>',
+                error:   '<span class="sbadge error">❌ Failed</span>'
+            }[item.status];
+
+            div.innerHTML = `
+                <div class="pi-imgs">
+                    <div class="pi-side"><label>📷 Original</label><img src="${item.rawUrl}" alt="orig"></div>
+                    <div class="pi-side">
+                        <label>✨ AI Enhanced</label>
+                        ${aiSrc
+                            ? `<img src="${aiSrc}" alt="enhanced">`
+                            : `<div class="pi-placeholder">${item.status==='working'?'<span class="spin">⟳</span>&nbsp;Processing…':item.status==='error'?'❌ Failed':'⏳ Waiting'}</div>`}
+                    </div>
+                </div>
+                <div class="pi-foot">
+                    ${badge}
+                    ${item.status === 'done'
+                        ? `<button class="acc-btn ${item.accepted?'yes':'no'}" data-i="${i}">${item.accepted?'✅ Accepted':'⭕ Rejected'} – click to toggle</button>`
+                        : ''}
+                </div>`;
+
+            const accBtn = div.querySelector('.acc-btn');
+            if (accBtn) accBtn.onclick = () => { photoItems[i].accepted = !photoItems[i].accepted; render(); };
+
+            list.appendChild(div);
+        });
+
+        const accepted = photoItems.filter(p => p.status === 'done' && p.accepted).length;
+        pubBtn.disabled = accepted === 0;
+        pubBtn.textContent = accepted > 0 ? `🚀 Publish ${accepted} Photo${accepted!==1?'s':''} to Catalog` : '🚀 Publish to Catalog';
+    }
+
+    // ── Background gradients ──
+    const BG_STYLES = {
+        '1': { type: 'linear', stops: ['#f5efe6','#ede0ce'], shadow: 'rgba(180,140,80,0.18)' },
+        '2': { type: 'linear', stops: ['#e8f4f8','#cee5f0'], shadow: 'rgba(80,140,180,0.15)' },
+        '3': { type: 'linear', stops: ['#f2f2f2','#e0e0e0'], shadow: 'rgba(0,0,0,0.12)' },
+        '4': { type: 'linear', stops: ['#1a1a2e','#16213e'], shadow: 'rgba(0,0,0,0.5)'  }
+    };
+
+    // ── Canvas compose: transparent PNG + chosen BG ──
+    async function compositeImage(transparentBlob, bgKey) {
+        const bg   = BG_STYLES[bgKey] || BG_STYLES['1'];
+        const img  = new Image();
+        const url  = URL.createObjectURL(transparentBlob);
+        await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = url; });
+        URL.revokeObjectURL(url);
+
+        const SIZE   = 1024;
+        const canvas = document.createElement('canvas');
+        canvas.width  = SIZE;
+        canvas.height = SIZE;
+        const ctx = canvas.getContext('2d');
+
+        // Background gradient
+        const grad = ctx.createLinearGradient(0, 0, SIZE, SIZE);
+        grad.addColorStop(0, bg.stops[0]);
+        grad.addColorStop(1, bg.stops[1]);
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, SIZE, SIZE);
+
+        // Subtle radial vignette highlight
+        const radial = ctx.createRadialGradient(SIZE/2, SIZE*0.4, SIZE*0.05, SIZE/2, SIZE*0.4, SIZE*0.7);
+        radial.addColorStop(0, 'rgba(255,255,255,0.18)');
+        radial.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = radial;
+        ctx.fillRect(0, 0, SIZE, SIZE);
+
+        // Drop shadow for the product
+        ctx.shadowColor   = bg.shadow;
+        ctx.shadowBlur    = 48;
+        ctx.shadowOffsetY = 24;
+
+        // Fit product image centred with padding
+        const pad    = SIZE * 0.08;
+        const aspect = img.width / img.height;
+        let dw, dh, dx, dy;
+        if (aspect >= 1) { dw = SIZE - pad*2; dh = dw / aspect; }
+        else             { dh = SIZE - pad*2; dw = dh * aspect; }
+        dx = (SIZE - dw) / 2;
+        dy = (SIZE - dh) / 2;
+
+        ctx.drawImage(img, dx, dy, dw, dh);
+        ctx.shadowColor = 'transparent';
+
+        return new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.92));
+    }
+
+    // ── HF background removal (briaai/RMBG-1.4) ──
+    async function removeBackground(file, apiKey, labelEl, attempt = 1) {
+        const MAX = 3;
+        let response;
+        try {
+            const buf = await file.arrayBuffer();
+            response  = await fetch(
+                'https://api-inference.huggingface.co/models/briaai/RMBG-1.4',
+                {
+                    method:  'POST',
+                    headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': file.type || 'image/jpeg' },
+                    body: buf
+                }
+            );
+        } catch (netErr) {
+            throw new Error('Network error — check your internet connection.');
+        }
+
+        if (response.status === 503) {
+            if (attempt < MAX) {
+                const wait = 20;
+                if (labelEl) labelEl.textContent = `Model loading, retrying in ${wait}s… (${attempt}/${MAX})`;
+                await delay(wait * 1000);
+                return removeBackground(file, apiKey, labelEl, attempt + 1);
+            }
+            throw new Error('Model kept loading — wait 1 minute and try again.');
+        }
+        if (response.status === 401 || response.status === 403) {
+            throw new Error('Invalid HF token — get a free one at huggingface.co/settings/tokens');
+        }
+        if (!response.ok) {
+            const ct  = response.headers.get('content-type') || '';
+            let errTxt;
+            if (ct.includes('json')) { const j = await response.json(); errTxt = j.error || JSON.stringify(j).slice(0,120); }
+            else errTxt = (await response.text()).slice(0, 120);
+            throw new Error(`API ${response.status}: ${errTxt}`);
+        }
+
+        const ct = response.headers.get('content-type') || '';
+        if (ct.includes('json')) {
+            const j = await response.json();
+            if (j.error) {
+                if (attempt < MAX) {
+                    if (labelEl) labelEl.textContent = `Warming up, retrying in 15s…`;
+                    await delay(15000);
+                    return removeBackground(file, apiKey, labelEl, attempt + 1);
+                }
+                throw new Error(j.error);
+            }
+            throw new Error('Unexpected JSON from model — check your token.');
+        }
+        return response.blob(); // transparent PNG
+    }
+
+    const delay = ms => new Promise(r => setTimeout(r, ms));
+
+    // ── Enhance button ──
+    enhBtn.addEventListener('click', async () => {
+        const apiKey = hfInput.value.trim();
+        if (!apiKey) { toast('⚠️ Enter your Hugging Face token first', 'error'); hfInput.focus(); return; }
+        if (rawFiles.length === 0) { toast('⚠️ Upload at least one photo', 'error'); return; }
+
+        localStorage.setItem('hf_api_key', apiKey);
+
+        photoItems = rawFiles.map(f => ({
+            file:     f,
+            rawUrl:   URL.createObjectURL(f),
+            status:   'pending',
+            blob:     null,
+            accepted: true
+        }));
+        render();
+
+        // Show progress
+        const progWrap  = document.getElementById('prog-wrap');
+        const progBar   = document.getElementById('prog-bar');
+        const progLabel = document.getElementById('prog-label');
+        const progFrac  = document.getElementById('prog-frac');
+        progWrap.style.display = 'block';
+        enhBtn.disabled = true;
+        enhBtn.innerHTML = '<span class="spin">⟳</span> Processing…';
+
+        let done = 0;
+        const total = photoItems.length;
+
+        for (let i = 0; i < photoItems.length; i++) {
+            photoItems[i].status = 'working';
+            render();
+            progLabel.textContent = `Enhancing ${i+1}/${total}…`;
+            progFrac.textContent   = `${i}/${total}`;
+
+            try {
+                // Step A: remove background via HF
+                progLabel.textContent = `Removing background ${i+1}/${total}…`;
+                const transparentPng = await removeBackground(photoItems[i].file, apiKey, progLabel);
+
+                // Step B: composite on chosen catalog background (local canvas — instant)
+                progLabel.textContent = `Compositing background ${i+1}/${total}…`;
+                photoItems[i].blob   = await compositeImage(transparentPng, selectedBg);
+                photoItems[i].status = 'done';
+                done++;
+            } catch (err) {
+                photoItems[i].status   = 'error';
+                photoItems[i].accepted = false;
+                console.error(`Photo ${i+1}:`, err);
+                toast(`❌ Photo ${i+1}: ${err.message}`, 'error');
+            }
+
+            progBar.style.width   = `${((i+1)/total)*100}%`;
+            progFrac.textContent  = `${i+1}/${total}`;
+            render();
+        }
+
+        progLabel.textContent = done === total ? '✅ All done!' : `✅ ${done}/${total} succeeded`;
+        toast(`Enhancement complete: ${done}/${total} photos ready`, done===total?'success':'');
+        enhBtn.disabled = false;
+        enhBtn.innerHTML = '✨ Enhance All Photos with AI';
+    });
+
+    // ── Publish ──
+    document.getElementById('publish-btn').addEventListener('click', async () => {
+        const title = document.getElementById('p-title').value.trim();
+        const price = document.getElementById('p-price').value.trim();
+        const cat   = catEl.value;
+        const desc  = document.getElementById('p-desc').value.trim();
+
+        if (!title || !price || !cat) { toast('⚠️ Fill in Title, Price and Category', 'error'); return; }
+
+        const accepted = photoItems.filter(p => p.status === 'done' && p.accepted);
+        if (accepted.length === 0) { toast('⚠️ No accepted photos to publish', 'error'); return; }
+
+        const pubBtn = document.getElementById('publish-btn');
+        pubBtn.disabled = true;
+        pubBtn.innerHTML = '<span class="spin">⟳</span> Publishing…';
+
+        try {
+            const paths = [];
+            for (let i = 0; i < accepted.length; i++) {
+                pubBtn.innerHTML = `<span class="spin">⟳</span> Uploading ${i+1}/${accepted.length}…`;
+                if (mode === 'github') {
+                    paths.push(await github.uploadBlob(accepted[i].blob));
+                } else {
+                    const fd = new FormData();
+                    const ext = (accepted[i].blob.type.split('/')[1]||'jpg').replace('jpeg','jpg');
+                    fd.append('image', new File([accepted[i].blob], `ai-${Date.now()}.${ext}`, { type: accepted[i].blob.type }));
+                    const r = await fetch('api/upload-image', { method:'POST', headers:{ 'Authorization': adminToken }, body: fd });
+                    paths.push((await r.json()).path);
+                }
+            }
+
+            pubBtn.innerHTML = '<span class="spin">⟳</span> Saving to catalog…';
+            const product = { id: Date.now().toString(), title, price, category: cat, description: desc, images: paths };
+
+            if (mode === 'github') {
+                const { content, sha } = await github.getFile('data.json');
+                const products = content || [];
+                products.unshift(product);
+                const res = await github.updateFile('data.json', products, sha, `Add AI product: ${title}`);
+                if (!res.ok) throw new Error('GitHub save failed');
+            } else {
+                const fd = new FormData();
+                Object.entries(product).forEach(([k,v]) => fd.append(k, Array.isArray(v)?JSON.stringify(v):v));
+                const res = await fetch('api/products', { method:'POST', headers:{ 'Authorization': adminToken }, body: fd });
+                if (!res.ok) throw new Error('Server save failed');
+            }
+
+            toast(`✅ "${title}" published with ${paths.length} photo${paths.length!==1?'s':''}!`, 'success');
+
+            // Reset
+            rawFiles = []; photoItems = [];
+            renderRaw(); render();
+            document.getElementById('p-title').value = '';
+            document.getElementById('p-price').value = '';
+            document.getElementById('p-desc').value  = '';
+            document.getElementById('prog-wrap').style.display = 'none';
+            document.getElementById('prog-bar').style.width    = '0';
+
+        } catch (err) {
+            toast('❌ Publish failed: ' + err.message, 'error');
+        } finally {
+            pubBtn.disabled = false;
+            const accepted = photoItems.filter(p=>p.status==='done'&&p.accepted).length;
+            pubBtn.textContent = accepted > 0 ? `🚀 Publish ${accepted} Photos to Catalog` : '🚀 Publish to Catalog';
+        }
+    });
+
+});
+</script>
+</body>
+</html>
