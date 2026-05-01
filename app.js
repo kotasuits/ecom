@@ -515,7 +515,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <p class="card-desc">${product.description||''}</p>
                     <div class="card-footer">
                         <span class="card-price"><sup>₹</sup>${Number(product.price).toLocaleString('en-IN')}</span>
-                        <button class="save-btn" title="Download">${dlIcon} Save</button>
+                        <button class="order-now-btn" title="Order Now">🛍️ Order Now</button>
                     </div>
                 </div>`;
 
@@ -544,20 +544,19 @@ document.addEventListener('DOMContentLoaded', () => {
             // Lightbox on image click
             mainImg.onclick = () => openLB(images, curIdx);
 
-            // Save/download
-            card.querySelector('.save-btn').onclick = async e => {
+            // Order Now
+            card.querySelector('.order-now-btn').onclick = e => {
                 e.preventDefault();
-                const btn = e.currentTarget;
-                const orig = btn.innerHTML; btn.innerHTML = 'Saving…'; btn.disabled = true;
-                try {
-                    const img = new Image(); img.crossOrigin = 'Anonymous'; img.src = mainImg.src;
-                    await new Promise((r,j) => { img.onload=r; img.onerror=j; });
-                    const cv = document.createElement('canvas'); cv.width=img.width; cv.height=img.height;
-                    const ctx = cv.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,cv.width,cv.height); ctx.drawImage(img,0,0);
-                    const blob = await new Promise(r => cv.toBlob(r,'image/jpeg',0.95));
-                    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${product.title.replace(/\s+/g,'_')}_${curIdx+1}.jpg`; a.click();
-                } catch { alert('Download error.'); }
-                finally { btn.innerHTML=orig; btn.disabled=false; }
+                e.stopPropagation();
+                if (!isFaved(product.id)) {
+                    pushFav(product, images, [images[curIdx]]);
+                    const hic = heartBtn.querySelector('.hic');
+                    if (hic) {
+                        hic.classList.add('faved');
+                        hic.textContent = '✅';
+                    }
+                }
+                openOrderModal();
             };
 
             productGrid.appendChild(card);
