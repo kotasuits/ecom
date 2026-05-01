@@ -149,55 +149,102 @@
         }
         .btn-clear:hover { border-color: #e11d48; color: #e11d48; background: rgba(225,29,72,0.04); }
 
-        /* ══════ ORDER MODAL ══════ */
+        /* ══════ CHECKOUT MODAL (SHOPIFY STYLE) ══════ */
         .order-overlay {
             display: none; position: fixed; inset: 0;
-            background: rgba(0,0,0,0.55); z-index: 1100;
+            background: rgba(0,0,0,0.6); z-index: 1100;
             align-items: center; justify-content: center;
-            backdrop-filter: blur(6px); padding: 1rem;
+            backdrop-filter: blur(8px); padding: 1rem;
         }
-        .order-overlay.open { display: flex; animation: fadeIn 0.2s ease; }
-        .order-modal {
+        .order-overlay.open { display: flex; animation: fadeIn 0.25s ease; }
+        .checkout-modal {
             background: #fff; border-radius: 20px;
-            width: 100%; max-width: 480px;
-            padding: 2rem; box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-            animation: slideUp 0.3s ease;
+            width: 100%; max-width: 900px;
+            max-height: 90vh; overflow-y: auto;
+            display: flex; flex-direction: column;
+            box-shadow: 0 25px 80px rgba(0,0,0,0.3);
+            animation: slideUp 0.3s cubic-bezier(0.22,1,0.36,1);
+            position: relative;
+        }
+        @media (min-width: 768px) {
+            .checkout-modal { flex-direction: row; overflow: hidden; }
         }
         @keyframes slideUp { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
-        .order-modal h2 { font-size: 1.4rem; font-weight: 800; margin-bottom: 0.5rem; }
-        .order-modal p.sub { color: var(--text-secondary); font-size: 0.88rem; margin-bottom: 1.5rem; }
-        .om-summary {
-            background: #f8f7f5; border-radius: 12px; padding: 1rem;
-            margin-bottom: 1.5rem; max-height: 160px; overflow-y: auto;
+        .checkout-close {
+            position: absolute; top: 1rem; right: 1rem; z-index: 10;
+            background: rgba(0,0,0,0.05); border: none; font-size: 1.2rem;
+            width: 32px; height: 32px; border-radius: 50%;
+            cursor: pointer; display: grid; place-items: center;
+            transition: background 0.2s;
         }
-        .om-summary-item { font-size: 0.82rem; color: var(--text-secondary); padding: 0.2rem 0; display:flex; gap:.4rem; align-items:center; }
-        .om-summary-item::before { content:'•'; color:#d4a96a; font-weight:800; }
-        .om-field { margin-bottom: 1rem; }
-        .om-field label { display: block; font-size:0.8rem; font-weight:600; color:var(--text-secondary); margin-bottom: 0.4rem; }
-        .om-field input {
-            width: 100%; padding: 0.8rem 1rem;
-            border: 2px solid var(--border); border-radius: 10px;
+        .checkout-close:hover { background: rgba(0,0,0,0.1); }
+        .checkout-left {
+            flex: 1.2; padding: 2.5rem 2rem; background: #fff;
+            border-right: 1px solid var(--border);
+        }
+        .checkout-right {
+            flex: 1; padding: 2.5rem 2rem; background: #fafafa;
+            display: flex; flex-direction: column;
+        }
+        @media (max-width: 767px) {
+            .checkout-left { border-right: none; border-bottom: 1px solid var(--border); padding: 2rem 1.5rem; }
+            .checkout-right { padding: 2rem 1.5rem; }
+        }
+        .checkout-modal h2 { font-size: 1.35rem; font-weight: 800; margin-bottom: 0.5rem; }
+        .checkout-modal p.sub { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 2rem; }
+        
+        .om-field { margin-bottom: 1.2rem; }
+        .om-field label { display: block; font-size:0.85rem; font-weight:600; color:var(--text-secondary); margin-bottom: 0.4rem; }
+        .om-field input, .om-field textarea {
+            width: 100%; padding: 0.85rem 1rem;
+            border: 2px solid var(--border); border-radius: 12px;
             font-family: inherit; font-size: 0.95rem;
-            transition: border-color 0.2s;
+            transition: all 0.2s; background: #fff;
         }
-        .om-field input:focus { outline: none; border-color: #1a1a1a; }
-        .om-actions { display: flex; gap: 0.75rem; margin-top: 1.5rem; }
+        .om-field input:focus, .om-field textarea:focus { outline: none; border-color: #1a1a1a; box-shadow: 0 0 0 3px rgba(26,26,26,0.1); }
+        .btn-auto-address {
+            background: none; border: none; font-size: 0.8rem; font-weight: 700;
+            color: #2563eb; cursor: pointer; padding: 0; transition: color 0.2s;
+        }
+        .btn-auto-address:hover { color: #1d4ed8; text-decoration: underline; }
+        .btn-auto-address.loading { color: #999; cursor: wait; text-decoration: none; }
+
+        .om-summary {
+            flex: 1; overflow-y: auto; padding-right: 0.5rem;
+            margin-bottom: 1.5rem; display: flex; flex-direction: column; gap: 1rem;
+        }
+        .checkout-item {
+            display: flex; align-items: center; gap: 1rem;
+        }
+        .checkout-item-img {
+            width: 64px; height: 64px; border-radius: 10px; object-fit: cover;
+            border: 1px solid var(--border); position: relative;
+        }
+        .checkout-item-badge {
+            position: absolute; top: -8px; right: -8px;
+            background: rgba(114,114,114,0.9); color: #fff;
+            width: 20px; height: 20px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.7rem; font-weight: 700;
+        }
+        .checkout-item-info { flex: 1; min-width: 0; }
+        .checkout-item-title { font-size: 0.9rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height:1.2; margin-bottom:0.2rem; }
+        .checkout-item-price { font-size: 0.95rem; font-weight: 700; }
+        
+        .checkout-total-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding-top: 1rem; border-top: 2px solid #eaeaea; margin-bottom: 1.5rem;
+            font-size: 1.2rem; font-weight: 800; color: #1a1a1a;
+        }
         .om-submit {
-            flex: 1; padding: 0.9rem;
+            width: 100%; padding: 1.1rem;
             background: #1a1a1a; color: #fff;
-            border: none; border-radius: 10px;
-            font-family: inherit; font-size: 0.95rem; font-weight: 700;
-            cursor: pointer; transition: background 0.2s;
+            border: none; border-radius: 12px;
+            font-family: inherit; font-size: 1rem; font-weight: 800;
+            cursor: pointer; transition: all 0.2s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
-        .om-submit:hover { background: #333; }
-        .om-cancel {
-            padding: 0.9rem 1.25rem;
-            background: none; border: 2px solid var(--border);
-            border-radius: 10px; font-family: inherit;
-            font-size: 0.95rem; font-weight: 600;
-            color: var(--text-secondary); cursor: pointer; transition: all 0.2s;
-        }
-        .om-cancel:hover { border-color: #999; }
+        .om-submit:hover { background: #333; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.15); }
 
         /* ══════ SUCCESS TOAST ══════ */
         .success-toast {
@@ -381,27 +428,37 @@
         </div>
     </div>
 
-    <!-- ══════ ORDER MODAL ══════ -->
+    <!-- ══════ CHECKOUT MODAL ══════ -->
     <div class="order-overlay" id="order-overlay">
-        <div class="order-modal">
-            <h2>📋 Checkout</h2>
-            <p class="sub">Complete your order details below. You'll be redirected to WhatsApp to confirm.</p>
-            <div class="om-summary" id="om-summary"></div>
-            <div class="om-field">
-                <label for="om-name">Your Name *</label>
-                <input id="om-name" type="text" placeholder="e.g. Rahul Sharma">
+        <div class="checkout-modal">
+            <button class="checkout-close" id="om-cancel">✕</button>
+            <div class="checkout-left">
+                <h2>Contact & Shipping</h2>
+                <p class="sub">Where should we send your order?</p>
+                <div class="om-field">
+                    <label for="om-name">Full Name *</label>
+                    <input id="om-name" type="text" placeholder="First and Last Name" autocomplete="name">
+                </div>
+                <div class="om-field">
+                    <label for="om-phone">WhatsApp Number *</label>
+                    <input id="om-phone" type="tel" placeholder="10-digit mobile number" autocomplete="tel">
+                </div>
+                <div class="om-field" style="position:relative;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:0.4rem;">
+                        <label for="om-address" style="margin-bottom:0;">Full Delivery Address *</label>
+                        <button id="btn-auto-address" type="button" class="btn-auto-address">📍 Auto-detect</button>
+                    </div>
+                    <textarea id="om-address" placeholder="e.g. 123 Main St, City, State, PIN" autocomplete="street-address" rows="3"></textarea>
+                </div>
             </div>
-            <div class="om-field">
-                <label for="om-phone">WhatsApp / Phone Number *</label>
-                <input id="om-phone" type="tel" placeholder="e.g. 98XXXXXXXX">
-            </div>
-            <div class="om-field">
-                <label for="om-address">Full Delivery Address *</label>
-                <textarea id="om-address" placeholder="e.g. 123 Main St, City, State, PIN" style="width: 100%; padding: 0.8rem 1rem; border: 2px solid var(--border); border-radius: 10px; font-family: inherit; font-size: 0.95rem; transition: border-color 0.2s; resize: vertical; min-height: 80px;"></textarea>
-            </div>
-            <div class="om-actions">
-                <button class="om-cancel" id="om-cancel">Cancel</button>
-                <button class="om-submit" id="om-submit">✅ Place Order on WhatsApp</button>
+            <div class="checkout-right">
+                <h2>Order Summary</h2>
+                <div class="om-summary" id="om-summary"></div>
+                <div class="checkout-total-row">
+                    <span>Total Amount</span>
+                    <span id="om-total-amt">₹0</span>
+                </div>
+                <button class="om-submit" id="om-submit">Complete Order via WhatsApp 💬</button>
             </div>
         </div>
     </div>
