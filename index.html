@@ -299,8 +299,8 @@
                 <li><a href="index.html" class="active">Catalog</a></li>
                 <li><a href="#contact">Contact</a></li>
                 <li>
-                    <button class="fav-nav-btn" id="fav-nav-btn" title="My Favourites">
-                        ❤️ Favourites
+                    <button class="fav-nav-btn" id="fav-nav-btn" title="My Cart">
+                        🛒 Cart
                         <span class="fav-counter" id="fav-counter">0</span>
                     </button>
                 </li>
@@ -312,14 +312,10 @@
         <div class="hero-content">
             <h2 class="hero-title">Kota Doria <span>Wholesale Only</span></h2>
             <p class="hero-subtitle">Premium handcrafted textiles — Embroidery, Block Print, Brush Paint &amp; Screen Print.</p>
-            <div class="moq-badge">
-                <span class="moq-label">Minimum Order Quantity</span>
-                <span class="moq-value">30-50 Pieces</span>
-            </div>
-            <div class="contact-strip">
+            <div class="contact-strip" style="margin-top: 1rem;">
                 <a href="tel:9664498112" class="contact-btn">📞 9664498112</a>
                 <a href="tel:8094689242" class="contact-btn">📞 8094689242</a>
-                <p class="hero-subtitle" style="width:100%;margin-bottom:0;">❤️ Tap the heart on any design to save it. Select 10 to enquire!</p>
+                <p class="hero-subtitle" style="width:100%;margin-bottom:0;margin-top:0.5rem;">🛒 Add designs to your cart and checkout via WhatsApp!</p>
             </div>
             <a href="#product-grid" class="scroll-down-arrow" aria-label="Scroll to first design">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v14M19 12l-7 7-7-7"/></svg>
@@ -339,7 +335,6 @@
     <footer class="glass-footer" id="contact">
         <div class="footer-contact">
             <h3 style="margin-bottom:0.75rem;font-size:1.2rem;">Kota Doria Wholesale Only</h3>
-            <div class="footer-moq">Minimum Order Quantity 30-50 pieces</div>
             <div style="display:flex;gap:1.5rem;justify-content:center;flex-wrap:wrap;margin-top:0.75rem;">
                 <a href="tel:9664498112" style="color:var(--accent);text-decoration:none;font-size:1rem;">📞 9664498112</a>
                 <a href="tel:8094689242" style="color:var(--accent);text-decoration:none;font-size:1rem;">📞 8094689242</a>
@@ -364,7 +359,7 @@
             </div>
             <div class="pp-foot">
                 <button class="pp-cancel" id="pp-cancel">Cancel</button>
-                <button class="pp-add-btn" id="pp-add-btn" disabled>❤️ Add to Favourites</button>
+                <button class="pp-add-btn" id="pp-add-btn" disabled>🛒 Add to Cart</button>
             </div>
         </div>
     </div>
@@ -373,26 +368,17 @@
     <div class="fav-overlay" id="fav-overlay"></div>
     <div class="fav-drawer" id="fav-drawer">
         <div class="drawer-head">
-            <h2>❤️ My Favourites <span id="drawer-count" style="background:#f3f4f6;color:#6b6b6b;font-size:0.75rem;padding:0.2rem 0.6rem;border-radius:20px;font-weight:700;"></span></h2>
+            <h2>🛒 Shopping Cart <span id="drawer-count" style="background:#f3f4f6;color:#6b6b6b;font-size:0.75rem;padding:0.2rem 0.6rem;border-radius:20px;font-weight:700;"></span></h2>
             <button class="drawer-close" id="drawer-close">✕</button>
         </div>
         <div class="drawer-body" id="drawer-body">
             <div class="drawer-empty">
-                <div class="de-ico">💔</div>
-                <p>No favourites yet.<br>Tap the ❤️ on any design!</p>
-            </div>
-        </div>
-        <div class="fav-progress-wrap" id="fav-progress-wrap">
-            <div class="fav-prog-label">
-                <span id="prog-text">Select <b>10</b> designs to enquire</span>
-                <span id="prog-count">0 / 10</span>
-            </div>
-            <div class="fav-prog-bg">
-                <div class="fav-prog-fill" id="fav-prog-fill" style="width:0%"></div>
+                <div class="de-ico">🛒</div>
+                <p>Your cart is empty.<br>Add some designs!</p>
             </div>
         </div>
         <div class="drawer-foot">
-            <button class="btn-order" id="btn-place-order" disabled>📋 Send Enquiry (select 10 designs)</button>
+            <button class="btn-order" id="btn-place-order" disabled>📋 Checkout</button>
             <button class="btn-clear" id="btn-clear-favs">Clear all</button>
         </div>
     </div>
@@ -400,8 +386,8 @@
     <!-- ══════ ORDER MODAL ══════ -->
     <div class="order-overlay" id="order-overlay">
         <div class="order-modal">
-            <h2>📋 Send Enquiry</h2>
-            <p class="sub">Your selected designs will be sent to us. We'll contact you shortly.</p>
+            <h2>📋 Checkout</h2>
+            <p class="sub">Complete your order details below. You'll be redirected to WhatsApp to confirm.</p>
             <div class="om-summary" id="om-summary"></div>
             <div class="om-field">
                 <label for="om-name">Your Name *</label>
@@ -411,15 +397,19 @@
                 <label for="om-phone">WhatsApp / Phone Number *</label>
                 <input id="om-phone" type="tel" placeholder="e.g. 98XXXXXXXX">
             </div>
+            <div class="om-field">
+                <label for="om-address">Full Delivery Address *</label>
+                <textarea id="om-address" placeholder="e.g. 123 Main St, City, State, PIN" style="width: 100%; padding: 0.8rem 1rem; border: 2px solid var(--border); border-radius: 10px; font-family: inherit; font-size: 0.95rem; transition: border-color 0.2s; resize: vertical; min-height: 80px;"></textarea>
+            </div>
             <div class="om-actions">
                 <button class="om-cancel" id="om-cancel">Cancel</button>
-                <button class="om-submit" id="om-submit">✅ Submit Enquiry</button>
+                <button class="om-submit" id="om-submit">✅ Place Order on WhatsApp</button>
             </div>
         </div>
     </div>
 
     <!-- ══════ SUCCESS TOAST ══════ -->
-    <div class="success-toast" id="success-toast">✅ Enquiry submitted! We'll contact you on WhatsApp.</div>
+    <div class="success-toast" id="success-toast">✅ Redirecting to WhatsApp...</div>
 
     <script src="app.js"></script>
 </body>
