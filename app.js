@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     const productGrid = document.getElementById('product-grid');
-    const POPUP_TRIGGER = 10; // popup fires at this count — NOT a hard limit
+    const POPUP_TRIGGER = 99999; // Disable auto popup for cart
 
     // ════════════════════════════════════════════
     //  FAVOURITES STATE
@@ -98,8 +98,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!btn) return;
         btn.disabled    = n === 0;
         btn.textContent = n === 0
-            ? '❤️ Select photos to add'
-            : `❤️ Add ${n} Photo${n !== 1 ? 's' : ''} to Favourites`;
+            ? '🛒 Select photos to add'
+            : `🛒 Add ${n} Photo${n !== 1 ? 's' : ''} to Cart`;
     }
 
     // ── Picker button/overlay event listeners ──
@@ -119,7 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (ppSelectedSrcs.size === 0 || !ppPendingProduct) return;
             overlay.classList.remove('open');
             pushFav(ppPendingProduct, ppPendingImages, [...ppSelectedSrcs]);
-            showToast(`❤️ ${ppSelectedSrcs.size} photo${ppSelectedSrcs.size !== 1 ? 's' : ''} added to favourites!`);
+            showToast(`🛒 ${ppSelectedSrcs.size} photo${ppSelectedSrcs.size !== 1 ? 's' : ''} added to cart!`);
         };
     })();
 
@@ -137,8 +137,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const id = btn.dataset.id;
             const faved = isFaved(id);
             btn.classList.toggle('faved', faved);
-            btn.querySelector('.hic').textContent = faved ? '❤️' : '🤍';
-            btn.setAttribute('aria-label', faved ? 'Remove from favourites' : 'Add to favourites');
+            btn.querySelector('.hic').textContent = faved ? '✅' : '🛒';
+            btn.setAttribute('aria-label', faved ? 'Remove from cart' : 'Add to cart');
         });
         document.querySelectorAll('.product-card').forEach(card => {
             card.classList.toggle('faved-card', isFaved(card.dataset.id));
@@ -162,9 +162,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const favDrawer  = document.getElementById('fav-drawer');
     const drawerBody = document.getElementById('drawer-body');
     const drawerCountEl = document.getElementById('drawer-count');
-    const progFill   = document.getElementById('fav-prog-fill');
-    const progCount  = document.getElementById('prog-count');
-    const progText   = document.getElementById('prog-text');
     const btnOrder   = document.getElementById('btn-place-order');
 
     function openDrawer()  { favOverlay.classList.add('open'); favDrawer.classList.add('open'); }
@@ -178,28 +175,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const n = favourites.length;
         drawerCountEl.textContent = n;
 
-        // Progress bar pulses at milestone, fills proportionally up to POPUP_TRIGGER, then stays full
-        const pct = n === 0 ? 0 : n < POPUP_TRIGGER ? (n / POPUP_TRIGGER) * 100 : 100;
-        progFill.style.width  = pct + '%';
-        progCount.textContent = `${n} selected`;
-
         if (n === 0) {
-            progText.innerHTML = `Tap ❤️ on any design to add it here`;
-            drawerBody.innerHTML = `<div class="drawer-empty"><div class="de-ico">💔</div><p>No favourites yet.<br>Tap the ❤️ on any design!</p></div>`;
+            drawerBody.innerHTML = `<div class="drawer-empty"><div class="de-ico">🛒</div><p>Your cart is empty.<br>Add some designs!</p></div>`;
             btnOrder.disabled = true;
-            btnOrder.textContent = `📋 Send Enquiry`;
+            btnOrder.textContent = `📋 Checkout`;
             return;
         }
 
-        // Button always enabled once 1+ item selected — no minimum
         btnOrder.disabled    = false;
-        btnOrder.textContent = `📋 Send Enquiry (${n} design${n !== 1 ? 's' : ''})`;
-
-        if (n < POPUP_TRIGGER) {
-            progText.innerHTML = `${n} selected — keep adding or send now!`;
-        } else {
-            progText.innerHTML = `✅ ${n} designs selected — ready to enquire!`;
-        }
+        btnOrder.textContent = `📋 Checkout (${n} item${n !== 1 ? 's' : ''})`;
 
         drawerBody.innerHTML = '';
         favourites.forEach((item, i) => {
@@ -230,7 +214,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('btn-clear-favs').onclick = () => {
         if (!favourites.length) return;
-        if (confirm('Clear all favourites?')) {
+        if (confirm('Clear entire cart?')) {
             favourites = []; saveFavs(); refreshFavUI();
         }
     };
@@ -261,16 +245,44 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('om-submit').onclick = async () => {
         const name  = omName.value.trim();
         const phone = omPhone.value.trim();
+        const addressEl = document.getElementById('om-address');
+        const address = addressEl ? addressEl.value.trim() : '';
+
         if (!name)  { omName.focus();  shakeInput(omName);  return; }
         if (!phone) { omPhone.focus(); shakeInput(omPhone); return; }
         if (!/^[\d\s+\-]{7,15}$/.test(phone)) { shakeInput(omPhone); omPhone.placeholder = 'Enter valid number'; return; }
+        if (addressEl && !address) { addressEl.focus(); shakeInput(addressEl); return; }
+
+        const totalAmt = favourites.reduce((s, f) => s + Number(f.price), 0);
+
+        let msg = `*New Order!*\n\n`;
+        msg += `*Name:* ${name}\n`;
+        msg += `*Phone:* ${phone}\n`;
+        msg += `*Address:* ${address}\n\n`;
+        msg += `*Items:*\n`;
+
+        favourites.forEach((f, i) => {
+            let imgUrl = f.image;
+            if (imgUrl.startsWith('images/')) {
+                imgUrl = window.location.origin + window.location.pathname.replace(/[^/]*$/, '') + imgUrl;
+            } else if (!imgUrl.startsWith('http')) {
+                imgUrl = window.location.origin + '/' + imgUrl;
+            }
+            msg += `${i+1}. ${f.title} - Rs. ${f.price}\n`;
+            msg += `Photo: ${imgUrl}\n\n`;
+        });
+
+        msg += `*Total Amount:* Rs. ${totalAmt}\n`;
+
+        const waLink = `https://wa.me/919664498112?text=${encodeURIComponent(msg)}`;
 
         const order = {
             id:        'ORD-' + Date.now(),
             name,
             phone,
+            address,
             designs:   [...favourites],
-            total:     favourites.reduce((s, f) => s + Number(f.price), 0),
+            total:     totalAmt,
             status:    'new',
             createdAt: new Date().toISOString()
         };
@@ -295,7 +307,9 @@ document.addEventListener('DOMContentLoaded', () => {
         closeOrderModal();
         closeDrawer();
         favourites = []; saveFavs(); refreshFavUI();
-        showToast('✅ Enquiry sent! We\'ll contact you on WhatsApp shortly. 🎉');
+        
+        window.open(waLink, '_blank');
+        showToast('✅ Redirecting to WhatsApp... 🎉');
     };
 
     function shakeInput(el) {
@@ -422,8 +436,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     <img src="${images[0]||''}" alt="${product.title}" class="main-img" loading="lazy">
                     <span class="card-category-badge">${fc(product.category)}</span>
                     ${images.length > 1 ? `<span class="img-count-badge">1 / ${images.length}</span>` : ''}
-                    <button class="heart-btn${isFaved(product.id)?' faved':''}" data-id="${product.id}" aria-label="${isFaved(product.id)?'Remove from':'Add to'} favourites">
-                        <span class="hic">${isFaved(product.id)?'❤️':'🤍'}</span>
+                    <button class="heart-btn${isFaved(product.id)?' faved':''}" data-id="${product.id}" aria-label="${isFaved(product.id)?'Remove from':'Add to'} cart">
+                        <span class="hic">${isFaved(product.id)?'✅':'🛒'}</span>
                     </button>
                     ${arrows}
                 </div>
