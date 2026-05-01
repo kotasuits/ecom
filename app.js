@@ -229,15 +229,69 @@ document.addEventListener('DOMContentLoaded', () => {
     const omName       = document.getElementById('om-name');
     const omPhone      = document.getElementById('om-phone');
 
+    const omTotalAmt = document.getElementById('om-total-amt');
+
     function openOrderModal() {
         omName.value  = '';
         omPhone.value = '';
-        omSummary.innerHTML = favourites.map(f =>
-            `<div class="om-summary-item">${f.title} — ₹${Number(f.price).toLocaleString('en-IN')}</div>`
-        ).join('');
+        const addressEl = document.getElementById('om-address');
+        if (addressEl) addressEl.value = '';
+
+        omSummary.innerHTML = favourites.map(f => `
+            <div class="checkout-item">
+                <div class="checkout-item-img">
+                    <img src="${f.image}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;">
+                    <div class="checkout-item-badge">1</div>
+                </div>
+                <div class="checkout-item-info">
+                    <div class="checkout-item-title">${f.title}</div>
+                    <div style="font-size:0.75rem; color:#666;">${(f.category || '').replace(/-/g,' ')}</div>
+                </div>
+                <div class="checkout-item-price">₹${Number(f.price).toLocaleString('en-IN')}</div>
+            </div>
+        `).join('');
+
+        const totalAmt = favourites.reduce((s, f) => s + Number(f.price), 0);
+        if (omTotalAmt) omTotalAmt.textContent = `₹${totalAmt.toLocaleString('en-IN')}`;
+
         orderOverlay.classList.add('open');
     }
     function closeOrderModal() { orderOverlay.classList.remove('open'); }
+
+    // Auto-detect address
+    const btnAutoAddress = document.getElementById('btn-auto-address');
+    if (btnAutoAddress) {
+        btnAutoAddress.onclick = () => {
+            if (!navigator.geolocation) return showToast('Geolocation is not supported by your browser.');
+            btnAutoAddress.textContent = '📍 Detecting...';
+            btnAutoAddress.classList.add('loading');
+            navigator.geolocation.getCurrentPosition(async (pos) => {
+                try {
+                    const lat = pos.coords.latitude;
+                    const lon = pos.coords.longitude;
+                    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
+                    if (!res.ok) throw new Error();
+                    const data = await res.json();
+                    const addr = data.address || {};
+                    const parts = [
+                        addr.house_number, addr.road, addr.suburb, addr.city || addr.town || addr.village,
+                        addr.state, addr.postcode
+                    ].filter(Boolean);
+                    const addressEl = document.getElementById('om-address');
+                    if (addressEl) addressEl.value = parts.join(', ');
+                } catch {
+                    showToast('Failed to auto-detect address. Please enter manually.');
+                } finally {
+                    btnAutoAddress.textContent = '📍 Auto-detect';
+                    btnAutoAddress.classList.remove('loading');
+                }
+            }, () => {
+                showToast('Location permission denied.');
+                btnAutoAddress.textContent = '📍 Auto-detect';
+                btnAutoAddress.classList.remove('loading');
+            });
+        };
+    }
 
     document.getElementById('om-cancel').onclick = closeOrderModal;
     orderOverlay.addEventListener('click', e => { if (e.target === orderOverlay) closeOrderModal(); });
@@ -261,6 +315,8 @@ document.addEventListener('DOMContentLoaded', () => {
         msg += `*Address:* ${address}\n\n`;
         msg += `*Items:*\n`;
 
+        const siteUrl = window.location.href.split('#')[0]; // base URL
+
         favourites.forEach((f, i) => {
             let imgUrl = f.image;
             if (imgUrl.startsWith('images/')) {
@@ -269,7 +325,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 imgUrl = window.location.origin + '/' + imgUrl;
             }
             msg += `${i+1}. ${f.title} - Rs. ${f.price}\n`;
-            msg += `Photo: ${imgUrl}\n\n`;
+            msg += `Photo: ${imgUrl}\n`;
+            msg += `Link: ${siteUrl}#${f.id}\n\n`;
         });
 
         msg += `*Total Amount:* Rs. ${totalAmt}\n`;
@@ -531,6 +588,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
         loadNextBatch();
         refreshFavUI();
+
+        if (window.location.hash) {
+            const id = window.location.hash.substring(1);
+            const idx = filteredProducts.findIndex(p => p.id === id);
+            if (idx >= 0) {
+                while (currentPage * BATCH <= idx && currentPage * BATCH < filteredProducts.length) {
+                    loadNextBatch();
+                }
+                setTimeout(() => {
+                    const el = document.querySelector(`.product-card[data-id="${id}"]`);
+                    if (el) {
+                        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        el.style.boxShadow = '0 0 0 4px #22c55e';
+                        setTimeout(() => el.style.boxShadow = '', 2000);
+                    }
+                }, 800);
+            }
+        }
     };
 
     initApp();
