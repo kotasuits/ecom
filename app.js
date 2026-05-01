@@ -237,21 +237,25 @@ document.addEventListener('DOMContentLoaded', () => {
         const addressEl = document.getElementById('om-address');
         if (addressEl) addressEl.value = '';
 
-        omSummary.innerHTML = favourites.map(f => `
+        omSummary.innerHTML = favourites.map(f => {
+            const qty = f.selectedImages ? f.selectedImages.length : 1;
+            const lineTotal = Number(f.price) * qty;
+            return `
             <div class="checkout-item">
                 <div class="checkout-item-img">
                     <img src="${f.image}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;">
-                    <div class="checkout-item-badge">1</div>
+                    <div class="checkout-item-badge">${qty}</div>
                 </div>
                 <div class="checkout-item-info">
-                    <div class="checkout-item-title">${f.title}</div>
+                    <div class="checkout-item-title">${f.title} (x${qty})</div>
                     <div style="font-size:0.75rem; color:#666;">${(f.category || '').replace(/-/g,' ')}</div>
                 </div>
-                <div class="checkout-item-price">₹${Number(f.price).toLocaleString('en-IN')}</div>
+                <div class="checkout-item-price">₹${lineTotal.toLocaleString('en-IN')}</div>
             </div>
-        `).join('');
+            `;
+        }).join('');
 
-        const totalAmt = favourites.reduce((s, f) => s + Number(f.price), 0);
+        const totalAmt = favourites.reduce((s, f) => s + (Number(f.price) * (f.selectedImages ? f.selectedImages.length : 1)), 0);
         if (omTotalAmt) omTotalAmt.textContent = `₹${totalAmt.toLocaleString('en-IN')}`;
 
         orderOverlay.classList.add('open');
@@ -307,7 +311,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!/^[\d\s+\-]{7,15}$/.test(phone)) { shakeInput(omPhone); omPhone.placeholder = 'Enter valid number'; return; }
         if (addressEl && !address) { addressEl.focus(); shakeInput(addressEl); return; }
 
-        const totalAmt = favourites.reduce((s, f) => s + Number(f.price), 0);
+        const totalAmt = favourites.reduce((s, f) => s + (Number(f.price) * (f.selectedImages ? f.selectedImages.length : 1)), 0);
 
         let msg = `*New Order!*\n\n`;
         msg += `*Name:* ${name}\n`;
@@ -318,14 +322,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const siteUrl = window.location.href.split('#')[0]; // base URL
 
         favourites.forEach((f, i) => {
-            let imgUrl = f.image;
-            if (imgUrl.startsWith('images/')) {
-                imgUrl = window.location.origin + window.location.pathname.replace(/[^/]*$/, '') + imgUrl;
-            } else if (!imgUrl.startsWith('http')) {
-                imgUrl = window.location.origin + '/' + imgUrl;
-            }
-            msg += `${i+1}. ${f.title} - Rs. ${f.price}\n`;
-            msg += `Photo: ${imgUrl}\n`;
+            const qty = f.selectedImages ? f.selectedImages.length : 1;
+            const lineTotal = Number(f.price) * qty;
+            msg += `${i+1}. ${f.title} (Qty: ${qty}) - Rs. ${lineTotal}\n`;
+
+            const imgs = f.selectedImages && f.selectedImages.length ? f.selectedImages : [f.image];
+            imgs.forEach((img, j) => {
+                let imgUrl = img;
+                if (imgUrl.startsWith('images/')) {
+                    imgUrl = window.location.origin + window.location.pathname.replace(/[^/]*$/, '') + imgUrl;
+                } else if (!imgUrl.startsWith('http')) {
+                    imgUrl = window.location.origin + '/' + imgUrl;
+                }
+                msg += `Photo ${j+1}: ${imgUrl}\n`;
+            });
             msg += `Link: ${siteUrl}#${f.id}\n\n`;
         });
 
